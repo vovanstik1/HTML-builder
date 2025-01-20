@@ -3,6 +3,8 @@ const path = require('path');
 const dirPath = path.join(__dirname, 'assets');
 const projectDist = path.join(__dirname, 'project-dist');
 const copyPath = path.join(projectDist, 'assets');
+const stylePath = path.join(__dirname, 'styles');
+const outputStylePath = path.join(projectDist, 'style.css');
 
 fs.mkdir(projectDist, { recursive: true }, (err) => {
   if (err) {
@@ -12,6 +14,29 @@ fs.mkdir(projectDist, { recursive: true }, (err) => {
 });
 
 copyFiles(dirPath, copyPath);
+mergeStyles();
+
+function mergeStyles() {
+  const write = fs.createWriteStream(outputStylePath);
+
+  fs.readdir(stylePath, { withFileTypes: true }, (err, items) => {
+    if (err) {
+      console.error('Error reading styles directory:', err.message);
+      return;
+    }
+
+    items.forEach((item) => {
+      const itemPath = path.join(stylePath, item.name);
+      if (path.extname(item.name) === '.css') {
+        const read = fs.createReadStream(itemPath, 'utf8');
+
+        read.on('data', (styles) => {
+          write.write(styles + '\n');
+        });
+      }
+    });
+  });
+}
 
 function copyFiles(src, dest) {
   fs.mkdir(dest, { recursive: true }, (err) => {
